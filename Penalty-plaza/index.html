@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Island Keeper</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { 
+            margin: 0; padding: 0; background-color: #111; color: white; 
+            overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            touch-action: none; /* Prevents pull-to-refresh on mobile */
+        }
+        #gameCanvas { display: block; width: 100vw; height: 100vh; }
+        #ui { position: absolute; top: 60px; left: 20px; font-size: 20px; pointer-events: none; font-weight: bold; }
+        #gameover { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            text-align: center; display: none; background: rgba(0,0,0,0.8); 
+            padding: 30px; border-radius: 20px; border: 1px solid #333;
+        }
+        button { 
+            padding: 15px 30px; font-size: 18px; font-weight: bold; background: #fff; 
+            color: #000; border: none; border-radius: 25px; cursor: pointer; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">Score: <span id="score">0</span> | Lives: <span id="lives">3</span></div>
+    
+    <div id="gameover">
+        <h1>Game Over</h1>
+        <p>Final Score: <span id="finalScore">0</span></p>
+        <button onclick="resetGame()">Play Again</button>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // 1. Register Service Worker for PWA installation
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game State
+        let score = 0;
+        let lives = 3;
+        let isGameOver = false;
+
+        // Entities
+        // Simulated Island (drawn with a subtle border to stand out against black)
+        const island = { width: 120, height: 35, x: canvas.width / 2 - 60, y: 15, radius: 15 };
+        const keeper = { width: 80, height: 20, x: canvas.width / 2 - 40, y: 120, speed: 4, dx: 4 };
+        const paddle = { width: 100, height: 20, x: canvas.width / 2 - 50, y: canvas.height - 80 };
+        const ball = { x: canvas.width / 2, y: canvas.height - 150, radius: 10, dx: 5, dy: -5, baseSpeed: 5 };
+
+        // Controls (Mouse and Touch)
+        canvas.addEventListener('touchmove', e => {
+            paddle.x = e.touches[0].clientX - paddle.width / 2;
+        });
+        canvas.addEventListener('mousemove', e => {
+            paddle.x = e.clientX - paddle.width / 2;
+        });
+
+        // Helper: Draw rounded rectangles
+        function drawRoundedRect(x, y, w, h, r, color, strokeColor = null) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.fill();
+            if (strokeColor) {
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 150;
+            // Launch upwards
+            ball.dy = -Math.abs(ball.baseSpeed + (score * 0.2)); 
+        }
+
+        function resetGame() {
+            score = 0;
+            lives = 3;
+            ball.dx = 5;
+            ball.dy = -5;
+            keeper.dx = 4;
+            isGameOver = false;
+            document.getElementById('score').innerText = score;
+            document.getElementById('lives').innerText = lives;
+            document.getElementById('gameover').style.display = 'none';
+            resetBall();
+            loop();
+        }
+
+        function update() {
+            if (isGameOver) return;
+
+            // Keeper Logic
+            keeper.x += keeper.dx;
+            if (keeper.x < 0 || keeper.x + keeper.width > canvas.width) keeper.dx *= -1;
+
+            // Ball Logic
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Wall Bounces
+            if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) ball.dx *= -1;
+            if (ball.y - ball.radius < 0) ball.dy *= -1;
+
+            // Bottom Drop (Pinball mechanic)
+            if (ball.y + ball.radius > canvas.height) {
+                lives--;
+                document.getElementById('lives').innerText = lives;
+                if (lives <= 0) {
+                    isGameOver = true;
+                    document.getElementById('finalScore').innerText = score;
+                    document.getElementById('gameover').style.display = 'block';
+                } else {
+                    resetBall();
+                }
+            }
+
+            // Paddle Collision
+            if (ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                ball.dy = -Math.abs(ball.dy);
+                // English/Spin based on hit location
+                let hitPoint = ball.x - (paddle.x + paddle.width / 2);
+                ball.dx = hitPoint * 0.15;
+            }
+
+            // Keeper Collision (Penalty block)
+            if (ball.y - ball.radius < keeper.y + keeper.height && ball.y + ball.radius > keeper.y && ball.x > keeper.x && ball.x < keeper.x + keeper.width) {
+                ball.dy *= -1;
+            }
+
+            // Island Collision (Goal!)
+            if (ball.y - ball.radius < island.y + island.height && ball.x > island.x && ball.x < island.x + island.width) {
+                ball.dy = Math.abs(ball.dy); // Force bounce downwards
+                score++;
+                document.getElementById('score').innerText = score;
+                
+                // Speed up gameplay
+                ball.dx *= 1.05;
+                ball.dy *= 1.05;
+                keeper.dx *= 1.05;
+            }
+            
+            // Keep paddle in screen bounds
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw simulated island (Black with dark grey stroke so it's visible)
+            drawRoundedRect(island.x, island.y, island.width, island.height, island.radius, '#000', '#333');
+            
+            // Draw Keeper (Red)
+            drawRoundedRect(keeper.x, keeper.y, keeper.width, keeper.height, 10, '#ff3b30');
+            
+            // Draw Paddle (Blue)
+            drawRoundedRect(paddle.x, paddle.y, paddle.width, paddle.height, 10, '#0a84ff');
+            
+            // Draw Ball (White)
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function loop() {
+            update();
+            draw();
+            if (!isGameOver) requestAnimationFrame(loop);
+        }
+
+        // Handle window resizing seamlessly
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            island.x = canvas.width / 2 - 60;
+            paddle.y = canvas.height - 80;
+        });
+
+        // Start game
+        loop();
+    </script>
+</body>
+</html>
