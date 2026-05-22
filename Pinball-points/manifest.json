@@ -2,7 +2,7 @@
   "name": "Pinball Points",
   "short_name": "Pinball Points",
   "description": "Hit the Island — pinball style",
-  "start_url": "https://real-nickel.github.io/island-party/Pinball-Points/index.html",
+  "start_url": "index.html",
   "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#0a0a0f",
