@@ -12,7 +12,7 @@
 
 ### Credit to Funn Media LLC for their original creation that inspired this. 
 
-######## Notes: The Claude LLM that was used was Sonnet 4.6 with websearch enabled. The Gemini LLM that was used was 3.1 Pro. 
+Notes: The Claude LLM that was used was Sonnet 4.6 with websearch enabled. The Gemini LLM that was used was 3.1 Pro. 
 
 
 The prompts that were used are:
