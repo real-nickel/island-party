@@ -15,11 +15,11 @@
 ######## Notes: The Claude LLM that was used was Sonnet 4.6 with websearch enabled. The Gemini LLM that was used was 3.1 Pro. 
 
 
-######## The prompts that were used are:
-######## you know the game "hit the island"?
-######## I want you to vibe code a html-css-js app that can be deployed to GH pages, and can be installed as a PWA on iPhone that is like hit the island except... well I'll give you a few choices to pick between (each pick gets equal priority, so pick either randomly or what you like the most. don't just pick the first option automatically, only do so if that was random or you actually like it):
-######## penalty shootout (put a goalkeeper) 
-######## racing with other objects to see who gets to the Dynamic Island the quickest (make a wavy path and do 3 laps - starting and ending at the island)
-######## a pinball style thing (the player gets 3 chances)
-######## anything else you can think of (you can think of as many other options as you like - actually add your own options to the table. and feel free to make one combining all od them)
-######## and make it so that It can be installed on android and uses a simulated island
+The prompts that were used are:
+- you know the game "hit the island"?
+- I want you to vibe code a html-css-js app that can be deployed to GH pages, and can be installed as a PWA on iPhone that is like hit the island except... well I'll give you a few choices to pick between (each pick gets equal priority, so pick either randomly or what you like the most. don't just pick the first option automatically, only do so if that was random or you actually like it):
+penalty shootout (put a goalkeeper) 
+racing with other objects to see who gets to the Dynamic Island the quickest (make a wavy path and do 3 laps - starting and ending at the island)
+a pinball style thing (the player gets 3 chances)
+anything else you can think of (you can think of as many other options as you like - actually add your own options to the table. and feel free to make one combining all od them)
+and make it so that It can be installed on android and uses a simulated island
